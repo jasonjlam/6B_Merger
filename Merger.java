@@ -6,9 +6,7 @@ import java.util.ArrayList;
 
 public class Merger {
 
-    ArrayList<String> usersData;
-    int end0;
-    
+    ArrayList<String> usersData, localCopy;
 
     /**
       Construct an instance from a list of data
@@ -16,61 +14,84 @@ public class Merger {
      */
     public Merger( ArrayList<String> list) {
         usersData = list;
-    }    
+    }
+
 
     /**
       Merge the sorted sub-lists.
      */
     public void merge(
-      // indexes of sub-list boundaries; see README
+      // indexes of sub-list boundaries in usersData; see README
         int start0  // index of first item in list0
       , int start1  // index of first item in list1
                     // = just past end of list0
-      , int nItems  // number of items in the merged list
-                    // = just past end of list1
+      , int end1    // index past end of list1
       ) {
-          end0 = start1;
-          usersData = recursiveMerge(start0, start1, nItems);        
+        /* copy the user's data, so that its two lists
+         can be merged into usersData */
+        localCopy = new ArrayList<String>( end1 - start0);
+        for( int iUserData = start0; iUserData < end1; iUserData++)
+            localCopy.add( usersData.get( iUserData));
+        // temp for debugging
+        System.out.println( "localCopy: " + localCopy);
+
+        mergeRange( start0
+                  , 0, start1 - start0
+                  , start1 - start0, end1 - start0);
     }
-    
-    public ArrayList<String> recursiveMerge(
-      // indexes of sub-list boundaries; see README
-        int start0  // index of first item in list0
-      , int start1  // index of first item in list1
-                    // = just past end of list0
-      , int nItems  // number of items in the merged list
-                    // = just past end of list1
+
+
+    /**
+      problem: Merge the user data from the given range in localCopy
+        into the usersData.
+     recursive abstraction: When I am asked to {problem statement}, 
+       the recursive abstraction can merge the results of a range
+       that is one item smaller.
+     */
+    private void mergeRange(
+        int target // destination in usersData. Probably redundant.
+
+        // boundaries of lists in localCopy, NOT usersData!
+      , int localStart0  // index of first item in list0
+      , int localEnd0    // just past end of list0
+      , int localStart1  // index of first item in list1
+      , int localEnd1    // just past end of list0
       ) {
-          // base case if the first list is empty
-          ArrayList<String> remainder = new ArrayList<String>();
-          if (start0 == end0) {
-              for (int i = start1; i < nItems; i++) {
-                  remainder.add(usersData.get(i));          
-              }
-              return remainder;
-          }
-          else if (start1 == nItems) {
-              for (int i = start0; i < end0; i++) {
-                  remainder.add(usersData.get(i));          
-              }
-              return remainder;
-          }
-          // recursive case
-          if (usersData.get(start0).compareTo(usersData.get(start1)) < 0){
-              System.out.println(usersData.get(start0) + " if");
-              
-              return drop(recursiveMerge(start0 + 1, start1, nItems), usersData.get(start0));         
-          }
-          else {
-              System.out.println(usersData.get(start1) + " else");
-              return drop(recursiveMerge(start0, start1 + 1, nItems), usersData.get(start1));         
-          }
-        
-    } 
+        // temp for debugging
+        System.out.println(
+            " target = "      + target  
+          + " localStart0 = " + localStart0
+          + " localEnd0 = "   + localEnd0  
+          + " localStart1 = " + localStart1
+          + " localEnd1 = "   + localEnd1  
+          );
+          
+        if( // both ranges are exhausted
+            localStart0 == localEnd0 && localStart1 == localEnd1
+          )
+            // solution to base case
+            return;  // merge is done
+        else{ // there is at least 1 item remaining to merge
+            if( // list0 exhausted
+                localStart0 == localEnd0
+              ) 
+               // take an item from list1
+                usersData.set( target++, localCopy.get( localStart1++));
+
+            // similarly for exhausted list1
+            else if( localStart1 == localEnd1)
+                usersData.set( target++, localCopy.get( localStart0++));
+            
+            else // items remain in both lists
+                // copy the smaller item
+                if( localCopy.get( localStart0).compareTo( 
+                    localCopy.get( localStart1)) < 0)
+                    usersData.set( target++, localCopy.get( localStart0++));
+                else
+                    usersData.set( target++, localCopy.get( localStart1++));
+            mergeRange( target, localStart0, localEnd0, localStart1, localEnd1);
+        }
     
-    public static ArrayList<String> drop(ArrayList<String> list, String value) {
-        list.add(0, value);
-        return list;
     }
 
 
@@ -91,9 +112,14 @@ public class Merger {
            ; i < endBefore -1 // stop early, because comparing to next
            ; i++
            )
-            if( usersData.get(i).compareTo( usersData.get(i+1)) > 0){
-                System.out.println(usersData.get(i) + ", " + usersData.get(i+1));
-                return false;}
+            if( usersData.get(i).compareTo( usersData.get(i+1)) > 0) {
+                 System.out.println( "trouble between position " + i 
+                                  + ", which holds " + usersData.get(i)
+                                  + ", and position " + (i +1)
+                                  + ", which holds " + usersData.get(i +1)
+                                  );
+               return false;
+            }
         return true;
     }
 }
